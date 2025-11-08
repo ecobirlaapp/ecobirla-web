@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EcoBirla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- We don't need style.css here, but we set a common font -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- This container centers the login box on all screen sizes -->
+    <div class="flex flex-col justify-center items-center min-h-screen p-4">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-extrabold text-green-700">EcoBirla</h1>
+            <p class="text-lg text-gray-500 mt-2">Sign in to your student account</p>
+        </div>
+
+        <!-- This is the main login card -->
+        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="student-id" class="block text-sm font-medium text-gray-700">Student ID</label>
+                    <div class="mt-1">
+                        <input id="student-id" name="student-id" type="text" required
+                               class="w-full border border-gray-300 px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                               placeholder="e.g., 5207872">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <div class="mt-1">
+                        <input id="password" name="password" type="password" required
+                               class="w-full border border-gray-300 px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                               placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <div id="error-message" class="text-sm text-red-600 text-center hidden">
+                    <!-- Error messages will appear here -->
+                </div>
+
+                <div>
+                    <button type="submit" id="login-button"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        Login
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+    </div>
+    
+    <!-- Load the login script as a module -->
+    <script src="login.js" type="module"></script>
+</body>
+</html>
