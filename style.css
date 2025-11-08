@@ -1,0 +1,106 @@
+html, body {
+    height: 100%;
+    overflow: hidden; 
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- Base App Layout --- */
+.app-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    margin: auto;
+    position: relative;
+    background-color: white;
+}
+
+/* --- Desktop-First Sidebar (Permanent) --- */
+.desktop-sidebar {
+    width: 288px; /* 72 * 4 */
+    height: 100vh; /* Full height */
+    position: fixed; /* Pinned to the left */
+    top: 0;
+    left: 0;
+    z-index: 20;
+    background-color: white;
+    border-right: 1px solid #e5e7eb; /* border-gray-200 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Main Content Area --- */
+.main-content-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.main-content { 
+    flex-grow: 1; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+    background-color: #f9fafb; /* bg-gray-50 */
+}
+
+/* --- Mobile-Only Slide-Over Sidebar --- */
+#mobile-sidebar {
+    transition: transform 0.3s ease-in-out;
+}
+#sidebar-overlay {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.sidebar-nav-item.active {
+    background-color: #ECFDF5; 
+    color: #059669; 
+    font-weight: 600;
+}
+.sidebar-nav-item.active svg { color: #059669; }
+
+/* --- Mobile-Only Bottom Nav --- */
+.nav-item.active { 
+    color: #10B981; 
+}
+.nav-item.active svg { 
+    color: #10B981; 
+}
+
+/* --- Page Transitions --- */
+.page { 
+    display: none; 
+    animation: fadeIn 0.3s ease-in-out; 
+}
+.page.active { 
+    display: block; 
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Misc Styles --- */
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #10B981;
+}
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #10B981;
+}
+
+.level-text-content {
+    transition: opacity 0.3s ease;
+}
+.level-number-container span {
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.horizontal-scroll {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+.horizontal-scroll::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
