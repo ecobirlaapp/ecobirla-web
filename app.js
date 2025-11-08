@@ -1,0 +1,1517 @@
+// app.js
+
+// Import the shared Supabase client
+import { supabase } from './supabase-client.js';
+
+// --- Global App State ---
+let appState = {
+    currentUser: null,
+    leaderboard: [],
+    history: [],
+    dailyChallenges: [],
+    events: [],
+    eventRsvps: [],
+    stores: [],
+    products: [],
+    userRewards: [],
+    levels: [],
+};
+
+const CHECK_IN_REWARD = 10;
+
+// --- DOM Elements ---
+const mainContent = document.querySelector('.main-content');
+const appLoading = document.getElementById('app-loading');
+const pages = document.querySelectorAll('.page');
+const sidebarNavItems = document.querySelectorAll('.sidebar-nav-item');
+const navItems = document.querySelectorAll('.nav-item'); 
+
+// Mobile Sidebar
+const mobileSidebar = document.getElementById('mobile-sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const mobileLogoutButton = document.getElementById('mobile-logout-button');
+const sidebarToggleButton = document.getElementById('sidebar-toggle-btn');
+
+// Desktop Sidebar
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const desktopLogoutButton = document.getElementById('logout-button');
+const desktopPageTitle = document.getElementById('desktop-page-title');
+
+// Shared User Info Elements
+const userPointsHeaders = [
+    document.getElementById('mobile-user-points-header'),
+    document.getElementById('desktop-user-points-header')
+];
+const userNameGreeting = document.getElementById('user-name-greeting');
+
+const userAvatarSidebars = [
+    document.getElementById('user-avatar-sidebar'),
+    document.getElementById('mobile-user-avatar-sidebar')
+];
+const userNameSidebars = [
+    document.getElementById('user-name-sidebar'),
+    document.getElementById('mobile-user-name-sidebar')
+];
+const userPointsSidebars = [
+    document.getElementById('user-points-sidebar'),
+    document.getElementById('mobile-user-points-sidebar')
+];
+const userLevelSidebars = [
+    document.getElementById('user-level-sidebar'),
+    document.getElementById('mobile-user-level-sidebar')
+];
+
+// ... other elements
+const checkInCard = document.getElementById('daily-check-in-card');
+const dashboardEventCard = document.getElementById('dashboard-event-card');
+const impactCo2 = document.getElementById('impact-co2');
+const impactRecycled = document.getElementById('impact-recycled');
+const impactEvents = document.getElementById('impact-events');
+const eventList = document.getElementById('event-list');
+const storeListPreview = document.getElementById('store-list-preview'); 
+const storeDetailPage = document.getElementById('store-detail-page'); 
+const productDetailPage = document.getElementById('product-detail-page'); 
+const historyList = document.getElementById('history-list');
+const leaderboardDashboardList = document.getElementById('leaderboard-dashboard-list');
+const leaderboardPageList = document.getElementById('leaderboard-page-list');
+const challengesPageList = document.getElementById('challenges-page-list');
+const challengesDashboardList = document.getElementById('challenges-dashboard-list');
+const profileAvatar = document.getElementById('profile-avatar');
+const profileName = document.getElementById('profile-name');
+const profileEmail = document.getElementById('profile-email');
+const profileJoined = document.getElementById('profile-joined');
+const profileLevelTitle = document.getElementById('profile-level-title');
+const profileLevelNumber = document.getElementById('profile-level-number');
+const profileLevelProgress = document.getElementById('profile-level-progress');
+const profileLevelNext = document.getElementById('profile-level-next');
+const profileStudentId = document.getElementById('profile-student-id');
+const profileCourse = document.getElementById('profile-course');
+const profileMobile = document.getElementById('profile-mobile');
+const profileEmailPersonal = document.getElementById('profile-email-personal');
+const profileMembership = document.getElementById('profile-membership');
+const ecopointsBalance = document.getElementById('ecopoints-balance'); 
+const ecopointsLevelTitle = document.getElementById('ecopoints-level-title'); 
+const ecopointsLevelNumber = document.getElementById('ecopoints-level-number'); 
+const ecopointsLevelProgress = document.getElementById('ecopoints-level-progress'); 
+const ecopointsLevelNext = document.getElementById('ecopoints-level-next'); 
+const ecopointsRecentActivity = document.getElementById('ecopoints-recent-activity'); 
+const levelLineProgress = document.getElementById('level-line-progress'); 
+const purchaseModalOverlay = document.getElementById('purchase-modal-overlay');
+const purchaseModal = document.getElementById('purchase-modal');
+const qrModalOverlay = document.getElementById('qr-modal-overlay');
+const qrModal = document.getElementById('qr-modal');
+const allRewardsList = document.getElementById('all-rewards-list');
+const changePasswordForm = document.getElementById('change-password-form');
+const changePasswordButton = document.getElementById('change-password-button');
+const passwordMessage = document.getElementById('password-message');
+
+
+// --- Helper Functions ---
+
+const getTodayDateString = () => {
+    return new Date().toISOString().split('T')[0];
+};
+
+async function logActivity(activity_type, details = {}) {
+    try {
+        if (!appState.currentUser) return; 
+        supabase
+            .from('activity_log')
+            .insert({
+                student_id: appState.currentUser.student_id,
+                activity_type,
+                details
+            })
+            .then(({ error }) => {
+                if (error) {
+                    console.warn("Error logging activity:", error.message);
+                }
+            });
+    } catch (err) {
+        console.warn("Failed to log activity:", err);
+    }
+}
+
+const getRewardDetails = (userReward) => {
+     if (!userReward) return null;
+    const product = appState.products.find(p => p.id === userReward.product_id);
+    if (!product) return null;
+    const store = appState.stores.find(s => s.id === product.store_id);
+    if (!store) return null;
+    
+    return {
+        ...product, 
+        storeName: store.name,
+        storeLogo: store.logo_url,
+        userRewardId: userReward.id,
+        purchaseDate: userReward.purchase_date,
+        status: userReward.status,
+        usedDate: userReward.used_date
+    };
+};
+
+const getProduct = (storeId, productId) => {
+    const store = appState.stores.find(s => s.id === storeId);
+    if (!store) return { store: null, product: null };
+    const product = appState.products.find(p => p.id === productId && p.store_id === storeId);
+    return { store, product };
+}
+
+const getUserLevel = (points) => {
+    if (!appState.levels || appState.levels.length === 0) {
+        return { level: 1, title: 'Loading...', progress: 0, progressText: '...', color: 'text-gray-600', progressBg: 'bg-gray-500' };
+    }
+    
+    let currentLevel = appState.levels[0];
+    for (let i = appState.levels.length - 1; i >= 0; i--) {
+        if (points >= appState.levels[i].min_points) {
+            currentLevel = appState.levels[i];
+            break;
+        }
+    }
+    
+    const nextLevel = appState.levels.find(l => l.level_number === currentLevel.level_number + 1);
+
+    const levelInfo = {
+        color: 'text-green-600',
+        progressBg: 'bg-green-500'
+    };
+
+    if (nextLevel) {
+        const pointsInLevel = points - currentLevel.min_points;
+        const pointsForLevel = nextLevel.min_points - currentLevel.min_points;
+        const progress = Math.max(0, Math.min(100, (pointsInLevel / pointsForLevel) * 100));
+        return {
+            ...levelInfo,
+            level: currentLevel.level_number,
+            title: currentLevel.title,
+            progress: progress,
+            progressText: `${points} / ${nextLevel.min_points} Pts`
+        };
+    } else {
+        return {
+            ...levelInfo,
+            level: currentLevel.level_number,
+            title: currentLevel.title,
+            progress: 100,
+            progressText: `${points} Pts (Max Level)`
+        };
+    }
+};
+
+// --- Data Fetching Functions ---
+
+async function fetchUserProfile() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+    const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('auth_id', user.id)
+        .single();
+    if (error) console.error("Error fetching student profile:", error.message);
+    else appState.currentUser = data;
+}
+
+async function fetchLeaderboard() {
+    const { data, error } = await supabase
+        .from('students')
+        .select('student_id, name, avatar_url, lifetime_points')
+        .order('lifetime_points', { ascending: false })
+        .limit(10);
+    if (error) console.error("Error fetching leaderboard:", error.message);
+    else appState.leaderboard = data;
+}
+
+async function fetchHistory() {
+    const { data, error } = await supabase
+        .from('points_history')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) console.error("Error fetching history:", error.message);
+    else appState.history = data;
+}
+
+async function fetchChallenges() {
+    const { data: challenges, error: chalError } = await supabase.from('challenges').select('*');
+    if (chalError) {
+        console.error("Error fetching challenges:", chalError.message);
+        return;
+    }
+    const today = getTodayDateString();
+    const { data: completions, error: compError } = await supabase
+        .from('challenge_completions')
+        .select('challenge_id')
+        .eq('student_id', appState.currentUser.student_id)
+        .eq('completed_at', today);
+    if (compError) console.error("Error fetching completions:", compError.message);
+    const completedIds = completions ? completions.map(c => c.challenge_id) : [];
+    appState.dailyChallenges = challenges.map(challenge => ({
+        ...challenge,
+        status: completedIds.includes(challenge.id) ? 'completed' : 'active'
+    }));
+}
+
+async function fetchEventsAndRSVPs() {
+    const [eventsResult, rsvpsResult] = await Promise.all([
+        supabase.from('events').select('*').order('event_date', { ascending: true }),
+        supabase.from('event_rsvps').select('*').eq('student_id', appState.currentUser.student_id)
+    ]);
+    if (eventsResult.error) console.error("Error fetching events:", eventsResult.error.message);
+    else appState.events = eventsResult.data;
+    if (rsvpsResult.error) console.error("Error fetching RSVPs:", rsvpsResult.error.message);
+    else appState.eventRsvps = rsvpsResult.data;
+}
+
+async function fetchStoresAndProducts() {
+    const [storesResult, productsResult] = await Promise.all([
+        supabase.from('stores').select('*'),
+        supabase.from('products').select('*')
+    ]);
+    if (storesResult.error) console.error("Error fetching stores:", storesResult.error.message);
+    else appState.stores = storesResult.data;
+    if (productsResult.error) console.error("Error fetching products:", productsResult.error.message);
+    else appState.products = productsResult.data;
+}
+
+async function fetchUserRewards() {
+    const { data, error } = await supabase
+        .from('user_rewards')
+        .select('*')
+        .order('purchase_date', { ascending: false });
+    if (error) console.error("Error fetching user rewards:", error.message);
+    else appState.userRewards = data;
+}
+
+async function fetchLevels() {
+    const { data, error } = await supabase
+        .from('levels')
+        .select('*')
+        .order('level_number', { ascending: true });
+    if (error) console.error("Error fetching levels:", error.message);
+    else appState.levels = data;
+}
+
+// --- Render Functions (Read from `appState`) ---
+
+// MODIFIED: Updates both mobile and desktop UI
+const renderHeader = () => {
+    const user = appState.currentUser;
+    if (!user) return;
+    
+    const levelInfo = getUserLevel(user.lifetime_points); 
+    const avatar = user.avatar_url || 'https://placehold.co/80x80/gray/white?text=User';
+    const levelText = `Lv. ${levelInfo.level}: ${levelInfo.title}`;
+    const levelColor = levelInfo.color || 'text-gray-600';
+
+    // Update headers
+    userPointsHeaders.forEach(el => el.textContent = user.current_points);
+    userNameGreeting.textContent = user.name;
+    
+    // Update sidebars
+    userAvatarSidebars.forEach(el => el.src = avatar);
+    userNameSidebars.forEach(el => el.textContent = user.name);
+    userPointsSidebars.forEach(el => el.textContent = user.current_points);
+    userLevelSidebars.forEach(el => {
+        el.textContent = levelText;
+        el.className = `text-sm font-medium ${levelColor} mb-1`;
+    });
+};
+
+const renderCheckInCard = () => {
+    const user = appState.currentUser;
+    if (!user) return;
+    const today = getTodayDateString();
+    
+    if (user.last_check_in_date === today) {
+        checkInCard.className = "bg-green-50 border border-green-200 p-5 rounded-xl flex items-center justify-between";
+        checkInCard.innerHTML = `
+            <div>
+                <h3 class="text-lg font-bold text-green-800">Daily Check-in</h3>
+                <p class="text-sm text-green-700">You've already checked in today!</p>
+            </div>
+            <div class="bg-green-100 text-green-700 font-bold py-2 px-4 rounded-lg flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="check" class="w-5 h-5"></i>
+                <span>Checked-in</span>
+            </div>
+        `;
+    } else {
+        checkInCard.className = "bg-white border border-gray-200 p-5 rounded-xl flex items-center justify-between shadow-sm";
+        checkInCard.innerHTML = `
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Daily Check-in</h3>
+                <p class="text-sm text-gray-600">Earn +${CHECK_IN_REWARD} points for checking in!</p>
+            </div>
+            <button onclick="performCheckIn()" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2 whitespace-nowrap hover:bg-green-700 transition-colors">
+                <i data-lucide="log-in" class="w-5 h-5"></i>
+                <span>Check-in</span>
+            </button>
+        `;
+    }
+    lucide.createIcons();
+};
+
+const renderDashboard = () => {
+    const user = appState.currentUser;
+    if (!user) return;
+
+    userNameGreeting.textContent = user.name;
+
+    const now = new Date();
+    const upcomingEvent = appState.events.find(e => new Date(e.event_date) > now);
+    
+    dashboardEventCard.innerHTML = '';
+    if (upcomingEvent) {
+        dashboardEventCard.innerHTML = `
+            <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white p-5 rounded-xl shadow-lg">
+                <div class="flex items-center mb-2">
+                    <i data-lucide="calendar-check" class="w-5 h-5 mr-2"></i>
+                    <h3 class="font-bold">Upcoming Event</h3>
+                </div>
+                <p class="text-lg font-semibold mb-1">${upcomingEvent.title}</p>
+                <p class="text-sm opacity-90 mb-3">${upcomingEvent.description}</p>
+                <button onclick="showPage('events')" class="bg-white text-green-600 font-bold py-2 px-4 rounded-full text-sm hover:bg-green-50 transition-all">View Details</button>
+            </div>
+        `;
+    } else {
+        dashboardEventCard.innerHTML = `
+            <div class="bg-white text-gray-700 p-5 rounded-xl shadow-sm">
+                <div class="flex items-center mb-2">
+                    <i data-lucide="calendar-off" class="w-5 h-5 mr-2"></i>
+                    <h3 class="font-bold">No Upcoming Events</h3>
+                </div>
+                <p class="text-sm opacity-90">Check back later for more events!</p>
+            </div>
+        `;
+    }
+    
+    const co2Saved = (user.lifetime_points * 0.6).toFixed(1);
+    const recycledCount = appState.history.filter(item => item.description.toLowerCase().includes('plastic')).length;
+    const eventsCount = appState.history.filter(item => item.type === 'event').length;
+    
+    impactCo2.textContent = `${co2Saved} kg`;
+    impactRecycled.textContent = recycledCount;
+    impactEvents.textContent = eventsCount;
+    
+    renderCheckInCard();
+    renderLeaderboardDashboard();
+    renderChallengesDashboard();
+    
+    lucide.createIcons();
+};
+
+
+const renderLeaderboardDashboard = () => {
+    leaderboardDashboardList.innerHTML = '';
+    const sortedLeaderboard = appState.leaderboard;
+    
+    if (!sortedLeaderboard || sortedLeaderboard.length === 0) {
+        leaderboardDashboardList.innerHTML = `<p class="text-center text-gray-500 text-sm p-4 bg-white rounded-xl shadow-sm">Leaderboard is empty.</p>`;
+        return;
+    }
+    
+    sortedLeaderboard.slice(0, 3).forEach((user, index) => {
+        const rank = index + 1;
+        let rankBadge = '';
+        if (rank === 1) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-yellow-500"></i>`;
+        else if (rank === 2) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-gray-400"></i>`;
+        else if (rank === 3) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-yellow-700"></i>`;
+        const isCurrentUserClass = user.student_id === appState.currentUser.student_id ? 'bg-green-100 border-l-4 border-green-500' : 'bg-white';
+        
+        leaderboardDashboardList.innerHTML += `
+            <div class="flex items-center ${isCurrentUserClass} p-4 rounded-xl shadow-sm">
+                <div class="w-8 flex justify-center items-center mr-3">${rankBadge}</div>
+                <img src="${user.avatar_url || 'https://placehold.co/40x40/gray/white?text=User'}" class="w-10 h-10 rounded-full mr-3" alt="${user.name}">
+                <p class="font-semibold text-gray-700">${user.student_id === appState.currentUser.student_id ? 'You' : user.name}</p>
+                <p class="ml-auto font-bold text-gray-600">${user.lifetime_points} Pts</p>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+};
+
+const renderLeaderboardPage = () => {
+    leaderboardPageList.innerHTML = '';
+    const sortedLeaderboard = appState.leaderboard;
+    
+    if (!sortedLeaderboard || sortedLeaderboard.length === 0) {
+        leaderboardPageList.innerHTML = `<p class="text-center text-gray-500 text-sm p-4 bg-white rounded-xl shadow-sm">Leaderboard is empty.</p>`;
+        return;
+    }
+    
+    sortedLeaderboard.forEach((user, index) => {
+        const rank = index + 1;
+        let rankBadge = `<span class="font-bold text-gray-500 w-6 text-center">${rank}.</span>`;
+        if (rank === 1) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-yellow-500"></i>`;
+        else if (rank === 2) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-gray-400"></i>`;
+        else if (rank === 3) rankBadge = `<i data-lucide="award" class="w-6 h-6 text-yellow-700"></i>`;
+        const isCurrentUserClass = user.student_id === appState.currentUser.student_id ? 'bg-green-100 border-2 border-green-500' : 'bg-white';
+        
+        leaderboardPageList.innerHTML += `
+            <div class="flex items-center ${isCurrentUserClass} p-4 rounded-xl shadow-sm">
+                <div class="w-8 flex justify-center items-center mr-3">${rankBadge}</div>
+                <img src="${user.avatar_url || 'https://placehold.co/40x40/gray/white?text=User'}" class="w-10 h-10 rounded-full mr-3" alt="${user.name}">
+                <p class="font-semibold text-gray-700">${user.student_id === appState.currentUser.student_id ? 'You' : user.name}</p>
+                <p class="ml-auto font-bold text-gray-600">${user.lifetime_points} Pts</p>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+};
+
+const renderChallengeCard = (challenge) => {
+    let buttonHTML = '';
+    if (challenge.status === 'active') {
+        buttonHTML = `<button onclick="completeChallenge('${challenge.id}')" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-green-700 transition-colors">Complete</button>`;
+    } else {
+        buttonHTML = `<button class="w-full bg-gray-300 text-gray-500 font-bold py-2 px-4 rounded-lg text-sm cursor-not-allowed flex items-center justify-center space-x-2" disabled>
+                        <i data-lucide="check" class="w-5 h-5"></i>
+                        <span>Completed</span>
+                    </button>`;
+    }
+
+    return `
+        <div class="bg-white p-4 rounded-xl shadow-md">
+            <div class="flex items-start">
+                <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                    <i data-lucide="${challenge.icon || 'award'}" class="w-6 h-6 text-yellow-600"></i>
+                </div>
+                <div class="flex-grow">
+                    <h3 class="font-bold text-gray-800 text-lg">${challenge.title}</h3>
+                    <p class="text-sm text-gray-500 mb-3">${challenge.description}</p>
+                    <p class="text-sm font-bold text-green-600 mb-3">+${challenge.points_reward} EcoPoints</p>
+                    ${buttonHTML}
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+const renderChallengesPage = () => {
+    challengesPageList.innerHTML = '';
+    const challenges = appState.dailyChallenges;
+    
+    if(!challenges || challenges.length === 0) {
+        challengesPageList.innerHTML = `<p class="text-center text-gray-500">No challenges available today. Check back tomorrow!</p>`;
+        return;
+    }
+
+    challenges.forEach(challenge => {
+        challengesPageList.innerHTML += renderChallengeCard(challenge);
+    });
+    lucide.createIcons();
+};
+
+const renderChallengesDashboard = () => {
+    challengesDashboardList.innerHTML = '';
+    const activeChallenges = appState.dailyChallenges.filter(c => c.status === 'active').slice(0, 2);
+
+    if (activeChallenges.length === 0) {
+        challengesDashboardList.innerHTML = `<p class="text-center text-gray-500 text-sm p-4 bg-white rounded-xl shadow-sm">You've completed all daily challenges!</p>`;
+        return;
+    }
+
+    activeChallenges.forEach(challenge => {
+        challengesDashboardList.innerHTML += renderChallengeCard(challenge);
+    });
+    lucide.createIcons();
+};
+
+const renderProfile = () => {
+    const user = appState.currentUser;
+    if (!user) return;
+    
+    const levelInfo = getUserLevel(user.lifetime_points);
+
+    profileAvatar.src = user.avatar_url || 'https://placehold.co/80x80/gray/white?text=User';
+    profileName.textContent = user.name;
+    profileEmail.textContent = user.email;
+    profileJoined.textContent = `Joined ${new Date(user.joined_at).toLocaleDateString('en-GB')}`; // dd/mm/yyyy
+    
+    profileLevelTitle.textContent = levelInfo.title;
+    profileLevelTitle.className = `text-sm font-semibold ${levelInfo.color || 'text-gray-600'}`;
+    profileLevelNumber.textContent = levelInfo.level;
+    profileLevelProgress.style.width = `${levelInfo.progress}%`;
+    profileLevelProgress.className = `h-2.5 rounded-full ${levelInfo.progressBg || 'bg-gray-500'}`; 
+    profileLevelNext.textContent = levelInfo.progressText;
+    
+    profileStudentId.textContent = user.student_id;
+    profileCourse.textContent = user.course;
+    profileMobile.textContent = user.mobile;
+    profileEmailPersonal.textContent = user.email;
+
+    if (user.is_green_club_member) {
+        profileMembership.innerHTML = `
+            <div class="p-3 bg-green-100 rounded-lg mr-4">
+                <i data-lucide="leaf" class="w-6 h-6 text-green-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900">Green Club</p>
+                <p class="text-sm text-green-600">Active Member</p>
+            </div>
+        `;
+    } else {
+        profileMembership.innerHTML = `
+            <div class="p-3 bg-gray-100 rounded-lg mr-4">
+                <i data-lucide="x-circle" class="w-6 h-6 text-gray-500"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900">No Memberships</p>
+                <p class="text-sm text-gray-500">Join a club to see it here.</p>
+            </div>
+        `;
+    }
+    
+    lucide.createIcons();
+};
+
+const renderEcoPointsPage = () => {
+    const user = appState.currentUser;
+    if (!user) return;
+
+    const levelInfo = getUserLevel(user.lifetime_points);
+
+    ecopointsBalance.textContent = user.current_points;
+    ecopointsLevelTitle.textContent = levelInfo.title;
+    ecopointsLevelTitle.className = `text-sm font-semibold ${levelInfo.color || 'text-gray-600'}`;
+    ecopointsLevelNumber.textContent = levelInfo.level;
+    ecopointsLevelProgress.style.width = `${levelInfo.progress}%`;
+    ecopointsLevelProgress.className = `h-2.5 rounded-full ${levelInfo.progressBg || 'bg-gray-500'}`; 
+    ecopointsLevelNext.textContent = levelInfo.progressText;
+
+    // This updates the static text on the level chart
+    const levelSteps = [
+        { id: 'level-step-1', points: '0 - 1000 Pts' },
+        { id: 'level-step-2', points: '1001 - 2000 Pts' },
+        { id: 'level-step-3', points: '2001 - 4000 Pts' },
+        { id: 'level-step-4', points: '4000+ Pts' }
+    ];
+
+    levelSteps.forEach(step => {
+        const stepEl = document.getElementById(step.id);
+        if (stepEl) {
+            stepEl.querySelector('.text-sm.font-semibold').textContent = step.points;
+        }
+    });
+
+    appState.levels.forEach((level) => {
+        const stepEl = document.getElementById(`level-step-${level.level_number}`);
+        if (!stepEl) return;
+        
+        const textContent = stepEl.querySelector('.level-text-content');
+        const numberSpan = stepEl.querySelector('.level-number-container span');
+        const titleH5 = textContent.querySelector('h5'); 
+        
+        textContent.classList.remove('opacity-60');
+        numberSpan.classList.remove('text-green-600', 'text-gray-400', 'scale-110');
+        titleH5.classList.remove('text-green-700', 'font-extrabold');
+
+        if (level.level_number < levelInfo.level) {
+            numberSpan.classList.add('text-green-600');
+        } else if (level.level_number === levelInfo.level) {
+            numberSpan.classList.add('text-green-600', 'scale-110'); 
+            titleH5.classList.add('text-green-700', 'font-extrabold'); 
+        } else {
+            numberSpan.classList.add('text-gray-400');
+            textContent.classList.add('opacity-60'); 
+        }
+    });
+    
+    if (appState.levels.length > 0) {
+        const totalProgressPercent = ((levelInfo.level - 1) + (levelInfo.progress / 100)) / (appState.levels.length - 1) * 100;
+        levelLineProgress.style.height = `${totalProgressPercent}%`;
+    }
+
+    ecopointsRecentActivity.innerHTML = '';
+    const historySummary = appState.history.slice(0, 3);
+    if (historySummary.length === 0) {
+         ecopointsRecentActivity.innerHTML = `<p class="text-center text-gray-500 text-sm">No transactions yet.</p>`;
+    } else {
+        historySummary.forEach(item => {
+            const pointClass = item.points_change >= 0 ? 'text-green-600' : 'text-red-600';
+            const sign = item.points_change >= 0 ? '+' : '';
+            const icon = item.type === 'reward-purchase' ? 'shopping-cart' : 
+                         item.type === 'check-in' ? 'log-in' : 
+                         item.type === 'event' ? 'calendar-check' : 'award';
+            ecopointsRecentActivity.innerHTML += `
+                <div class="flex items-center">
+                    <div class="p-2 bg-gray-100 rounded-lg mr-3">
+                        <i data-lucide="${icon}" class="w-5 h-5 text-gray-600"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="font-semibold text-gray-800 text-sm">${item.description}</p>
+                        <p class="text-xs text-gray-500">${new Date(item.created_at).toLocaleDateString('en-GB')}</p>
+                    </div>
+                    <p class="font-bold text-sm ${pointClass}">${sign}${item.points_change}</p>
+                </div>
+            `;
+        });
+    }
+    lucide.createIcons();
+};
+
+const renderHistory = () => {
+    historyList.innerHTML = '';
+    const sortedHistory = appState.history;
+    
+    if (sortedHistory.length === 0) {
+        historyList.innerHTML = `<p class="text-center text-gray-500">No activity yet.</p>`;
+        return;
+    }
+    sortedHistory.forEach(item => {
+        const pointClass = item.points_change >= 0 ? 'text-green-600' : 'text-red-600';
+        const sign = item.points_change >= 0 ? '+' : '';
+        const icon = item.type === 'reward-purchase' ? 'shopping-cart' : 
+                     item.type === 'check-in' ? 'log-in' : 
+                     item.type === 'event' ? 'calendar-check' : 'award';
+        
+        historyList.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-sm flex items-center">
+                <div class="p-3 bg-gray-100 rounded-lg mr-4">
+                    <i data-lucide="${icon}" class="w-6 h-6 text-gray-600"></i>
+                </div>
+                <div class="flex-grow">
+                    <p class="font-semibold text-gray-800">${item.description}</p>
+                    <p class="text-xs text-gray-500">${new Date(item.created_at).toLocaleDateString('en-GB')}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold ${pointClass}">${sign}${item.points_change}</p>
+                    <p class="text-xs text-gray-500">EcoPoints</p>
+                </div>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+};
+
+const renderEvents = () => {
+    eventList.innerHTML = '';
+    const events = appState.events;
+    if (!events || events.length === 0) {
+        eventList.innerHTML = `<p class="text-center text-gray-500">No upcoming events scheduled.</p>`;
+        return;
+    }
+
+    events.forEach(e => {
+        const hasRSVPd = appState.eventRsvps.some(rsvp => rsvp.event_id === e.id);
+        
+        const rsvpButton = hasRSVPd
+            ? `<button class="bg-gray-300 text-gray-600 font-bold py-2 px-4 rounded-lg text-sm w-full" disabled>Attending</button>`
+            : `<button onclick="updateEventRSVP(${e.id})" class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-green-600 w-full">RSVP Now</button>`;
+        
+        eventList.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <div class="flex items-start">
+                    <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                        <i data-lucide="calendar" class="w-6 h-6 text-purple-600"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p class="text-xs font-semibold text-purple-600">${new Date(e.event_date).toLocaleString('en-GB')}</p>
+                        <h3 class="font-bold text-gray-800 text-lg">${e.title}</h3>
+                        <p class="text-sm text-gray-500 mb-3">${e.description}</p>
+                        <p class="text-sm font-bold text-green-600 mb-3">+${e.points_reward} EcoPoints for attending</p>
+                        ${rsvpButton}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+};
+
+const renderProductCard = (product, storeId, type = 'grid') => {
+    // Desktop: 4 cards per row. Mobile: 2 cards (handled by grid)
+    // Use `group` for hover effects
+    return `
+        <div class="flex-shrink-0 bg-white border rounded-xl overflow-hidden flex flex-col shadow-md cursor-pointer transition-shadow hover:shadow-lg group" 
+             onclick="showProductDetailPage('${storeId}', '${product.id}')">
+            
+            <div class="overflow-hidden">
+                <img src="${product.images ? product.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" 
+                     alt="${product.name}" 
+                     class="w-full h-48 md:h-64 object-cover transition-transform duration-300 group-hover:scale-105">
+            </div>
+            <div class="p-3 md:p-4 flex flex-col flex-grow">
+                <p class="font-bold text-gray-800 text-sm md:text-base truncate">${product.name}</p>
+                
+                <div class="mt-auto pt-2">
+                    <p class="text-xs text-gray-400 line-through">₹${product.original_price_inr || '0'}</p>
+                    <div class="flex items-center font-bold text-gray-800 my-1">
+                        <span class="text-md text-green-700">₹${product.discounted_price_inr || '0'}</span>
+                        <span class="mx-1 text-gray-400 text-xs">+</span>
+                        <i data-lucide="leaf" class="w-3 h-3 text-green-500 mr-1"></i>
+                        <span class="text-sm text-green-700">${product.cost_in_points}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+const renderRewards = () => {
+    storeListPreview.innerHTML = ''; 
+    
+    appState.stores.forEach(store => {
+        let productsHTML = '';
+        const storeProducts = appState.products.filter(p => p.store_id === store.id);
+        
+        // On desktop, we show 4, on mobile just 3
+        const productSlice = storeProducts.slice(0, 4); 
+        
+        productSlice.forEach(product => {
+            // Use 'grid' style for cards, but let the container handle layout
+            productsHTML += renderProductCard(product, store.id, 'grid');
+        });
+
+        storeListPreview.innerHTML += `
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 flex items-center justify-between border-b bg-gray-50">
+                    <div class="flex items-center cursor-pointer" onclick="showStoreDetailPage('${store.id}')">
+                        <img src="${store.logo_url || 'https://placehold.co/40x40/gray/white?text=Store'}" class="w-10 h-10 rounded-full mr-3 border">
+                        <h3 class="text-lg font-bold text-gray-800">${store.name}</h3>
+                    </div>
+                    <button onclick="showStoreDetailPage('${store.id}')" class="text-sm font-semibold text-green-600 hover:text-green-700">
+                        View All
+                    </button>
+                </div>
+                <!-- Responsive grid for products -->
+                <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${productsHTML}
+                </div>
+            </div>
+        `;
+    });
+    lucide.createIcons();
+};
+
+const renderMyRewardsPage = () => {
+    allRewardsList.innerHTML = '';
+    const allRewards = appState.userRewards; 
+
+    if (!allRewards || allRewards.length === 0) {
+        allRewardsList.innerHTML = `<p class="text-center text-gray-500 p-4">You have no rewards. Visit the Eco-Store to get some!</p>`;
+        return;
+    }
+    
+    // Responsive grid for rewards list
+    allRewardsList.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+    allRewards.forEach(userReward => {
+        const rewardDetails = getRewardDetails(userReward);
+        if (!rewardDetails) return;
+
+        if (rewardDetails.status === 'active') {
+            allRewardsList.innerHTML += `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden flex">
+                    <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-full object-cover">
+                    <div class="p-4 flex-grow flex flex-col">
+                        <h3 class="font-bold text-gray-800">${rewardDetails.name}</h3>
+                        <p class="text-sm text-gray-500">${rewardDetails.storeName}</p>
+                        <p class="text-xs text-gray-400 mb-2 mt-1">Purchased: ${new Date(rewardDetails.purchaseDate).toLocaleDateString('en-GB')}</p>
+                        <button onclick="openRewardQrModal('${userReward.id}')" class="mt-auto w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-green-600">
+                            Use Now
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            allRewardsList.innerHTML += `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden flex opacity-60">
+                    <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-full object-cover">
+                    <div class="p-4 flex-grow">
+                        <h3 class="font-bold text-gray-800">${rewardDetails.name}</h3>
+                        <p class="text-sm text-gray-500">${rewardDetails.storeName}</p>
+                        <p class="text-xs text-gray-400 mt-1">Purchased: ${new Date(rewardDetails.purchaseDate).toLocaleDateString('en-GB')}</p>
+                        <p class="text-xs text-gray-500 font-semibold">Used: ${new Date(rewardDetails.usedDate).toLocaleDateString('en-GB')}</p>
+                        <div class="mt-2 w-full bg-gray-200 text-gray-500 font-bold py-2 px-4 rounded-lg text-sm text-center">
+                            Redeemed
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    lucide.createIcons();
+};
+
+
+// --- App Logic (Actions that write to Supabase) ---
+
+window.performCheckIn = async () => {
+    logActivity('button_click', { action: 'perform_check_in_attempt' });
+    const today = getTodayDateString();
+    if (appState.currentUser.last_check_in_date === today) {
+        return; 
+    }
+
+    const { error: updateError } = await supabase
+        .from('students')
+        .update({ last_check_in_date: today })
+        .eq('student_id', appState.currentUser.student_id);
+
+    if (updateError) {
+        console.error("Error updating check-in:", updateError.message);
+        return;
+    }
+
+    const { error: pointsError } = await supabase
+        .from('points_history')
+        .insert({
+            student_id: appState.currentUser.student_id,
+            points_change: CHECK_IN_REWARD,
+            description: 'Daily Check-in Bonus',
+            type: 'check-in'
+        });
+    
+    if (pointsError) {
+        console.error("Error logging check-in points:", pointsError.message);
+        return;
+    }
+
+    logActivity('check_in_success', { points: CHECK_IN_REWARD });
+    appState.currentUser.last_check_in_date = today;
+    appState.currentUser.current_points += CHECK_IN_REWARD;
+    appState.currentUser.lifetime_points += CHECK_IN_REWARD;
+    await fetchHistory(); // Refetch history for impact stats
+
+    renderCheckInCard();
+    renderHeader(); 
+    renderDashboard();
+};
+
+window.completeChallenge = async (challengeId) => {
+    logActivity('button_click', { action: 'complete_challenge_attempt', challengeId });
+    const challenge = appState.dailyChallenges.find(c => c.id == challengeId);
+    if (!challenge || challenge.status === 'completed') {
+        return;
+    }
+
+    const { error: compError } = await supabase
+        .from('challenge_completions')
+        .insert({
+            challenge_id: challenge.id,
+            student_id: appState.currentUser.student_id,
+            completed_at: getTodayDateString()
+        });
+    
+    if (compError) {
+        console.error("Error completing challenge:", compError.message);
+        return;
+    }
+
+    const { error: pointsError } = await supabase
+        .from('points_history')
+        .insert({
+            student_id: appState.currentUser.student_id,
+            points_change: challenge.points_reward,
+            description: `Completed: ${challenge.title}`,
+            type: 'challenge'
+        });
+
+    if (pointsError) {
+        console.error("Error logging challenge points:", pointsError.message);
+        return;
+    }
+
+    logActivity('challenge_complete_success', { challengeId, points: challenge.points_reward });
+    challenge.status = 'completed';
+    appState.currentUser.current_points += challenge.points_reward;
+    appState.currentUser.lifetime_points += challenge.points_reward;
+    await fetchHistory(); // Refetch history
+
+    renderHeader();
+    renderChallengesPage();
+    renderChallengesDashboard(); 
+};
+
+window.showPage = (pageId, pageTitle) => {
+    pages.forEach(p => p.classList.remove('active'));
+    storeDetailPage.innerHTML = '';
+    productDetailPage.innerHTML = '';
+    
+    const newPage = document.getElementById(pageId);
+    if (newPage) {
+        newPage.classList.add('active');
+    }
+    
+    // Update active state in BOTH sidebars
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('onclick').includes(`'${pageId}'`));
+    });
+    
+    navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('onclick').includes(`'${pageId}'`));
+    });
+    
+    mainContent.scrollTop = 0;
+    
+    logActivity('page_view', { page: pageId });
+    
+    // Set desktop header title
+    const title = pageTitle || pageId.charAt(0).toUpperCase() + pageId.slice(1).replace('-', ' ');
+    if (desktopPageTitle) desktopPageTitle.textContent = title;
+    
+    // Re-render functions
+    if (pageId === 'my-rewards') renderMyRewardsPage();
+    if (pageId === 'profile') renderProfile();
+    if (pageId === 'ecopoints') renderEcoPointsPage();
+    if (pageId === 'history') renderHistory();
+    if (pageId === 'leaderboard') renderLeaderboardPage();
+    if (pageId === 'rewards') renderRewards();
+    if (pageId === 'challenges') renderChallengesPage();
+    if (pageId === 'events') renderEvents();
+    if (pageId === 'dashboard') renderDashboard();
+    if (pageId === 'change-password') {
+        passwordMessage.textContent = '';
+        passwordMessage.className = 'text-sm text-center';
+        changePasswordForm.reset();
+    }
+
+    toggleSidebar(true); // Close mobile sidebar
+};
+
+// Make sure sidebar toggle only affects mobile sidebar
+window.toggleSidebar = (forceClose = false) => {
+    if (forceClose) {
+        mobileSidebar.classList.add('-translate-x-full');
+        sidebarOverlay.classList.add('opacity-0');
+        sidebarOverlay.classList.add('hidden');
+    } else {
+        logActivity('button_click', { action: 'toggle_mobile_sidebar' });
+        mobileSidebar.classList.toggle('-translate-x-full');
+        sidebarOverlay.classList.toggle('hidden');
+        sidebarOverlay.classList.toggle('opacity-0');
+    }
+};
+
+window.showStoreDetailPage = (storeId) => {
+    const store = appState.stores.find(s => s.id === storeId);
+    if (!store) return;
+    
+    logActivity('page_view', { page: 'store_detail', storeId: store.id });
+    if (desktopPageTitle) desktopPageTitle.textContent = store.name;
+    
+    let productsHTML = '';
+    appState.products.filter(p => p.store_id === storeId)
+        .sort((a,b) => a.cost_in_points - b.cost_in_points)
+        .forEach(product => {
+            productsHTML += renderProductCard(product, store.id, 'grid');
+        });
+    
+    storeDetailPage.innerHTML = `
+        <div class="p-4 bg-white sticky top-0 z-10 border-b flex items-center md:hidden">
+            <button onclick="showPage('rewards', 'Eco-Store Rewards')" class="p-2 text-gray-600 -ml-2 mr-2">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </button>
+            <img src="${store.logo_url || 'https://placehold.co/40x40/gray/white?text=Store'}" class="w-10 h-10 rounded-full mr-3 border">
+            <h2 class="text-xl font-bold text-gray-800">${store.name}</h2>
+        </div>
+        <div class="p-6">
+            <h3 class="text-xl font-semibold text-gray-700 mb-4 md:hidden">All Products</h3>
+            <!-- Responsive grid: 2 cols on mobile, 3 on tablet, 4 on desktop -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                ${productsHTML}
+            </div>
+        </div>
+    `;
+    
+    pages.forEach(p => p.classList.remove('active'));
+    storeDetailPage.classList.add('active');
+    mainContent.scrollTop = 0;
+    lucide.createIcons();
+};
+
+window.showProductDetailPage = (storeId, productId) => {
+    const { store, product } = getProduct(storeId, productId);
+    if (!product) return;
+    
+    logActivity('page_view', { page: 'product_detail', productId: product.id });
+    if (desktopPageTitle) desktopPageTitle.textContent = product.name;
+
+    const canAfford = appState.currentUser.current_points >= product.cost_in_points;
+    const buttonClass = canAfford 
+        ? 'bg-green-600 hover:bg-green-700' 
+        : 'bg-gray-400 cursor-not-allowed';
+
+    let featuresHTML = '';
+    if (product.features) {
+        product.features.forEach(f => {
+            featuresHTML += `<li class="flex items-center"><i data-lucide="check" class="w-4 h-4 text-green-500 mr-2"></i>${f}</li>`;
+        });
+    }
+    
+    let specsHTML = '';
+    if (product.specifications) {
+        for (const [key, value] of Object.entries(product.specifications)) {
+            specsHTML += `
+                <div class="bg-gray-100 p-3 rounded-lg text-center">
+                    <p class="text-xs text-gray-500">${key}</p>
+                    <p class="font-semibold text-gray-800 text-sm">${value}</p>
+                </div>
+            `;
+        }
+    }
+
+    let mainImage = (product.images && product.images.length > 0)
+        ? product.images[0]
+        : 'https://placehold.co/400x533/gray/white?text=No+Img';
+    
+    let thumbnailsHTML = '';
+    if (product.images && product.images.length > 1) {
+        product.images.forEach((img, index) => {
+            thumbnailsHTML += `
+                <button class="w-16 h-16 rounded-lg overflow-hidden border-2 ${index === 0 ? 'border-green-500' : 'border-transparent'} focus:outline-none"
+                        onclick="document.getElementById('product-main-image').src='${img}'; 
+                                 this.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('border-green-500')); 
+                                 this.classList.add('border-green-500');">
+                    <img src="${img}" alt="thumbnail ${index + 1}" class="w-full h-full object-cover">
+                </button>
+            `;
+        });
+    }
+
+    productDetailPage.innerHTML = `
+        <div class="pb-24">
+            <!-- Back button for mobile -->
+            <button onclick="showStoreDetailPage('${store.id}')" class="absolute top-4 left-4 p-2 bg-white/80 rounded-full shadow-md text-gray-700 md:hidden z-10">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Desktop: Two-column layout -->
+            <div class="md:grid md:grid-cols-2 md:gap-8">
+                <!-- Image Gallery -->
+                <div class="w-full">
+                    <img id="product-main-image" src="${mainImage}" alt="${product.name}" class="w-full h-96 md:h-[32rem] lg:h-[40rem] object-cover bg-gray-200 md:rounded-xl">
+                    ${thumbnailsHTML ? `
+                    <div class="p-4 bg-white md:bg-transparent">
+                        <div class="flex space-x-3 overflow-x-auto horizontal-scroll">
+                            ${thumbnailsHTML}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Product Info -->
+                <div class="p-6 bg-white md:bg-transparent">
+                    <h2 class="text-3xl font-bold text-gray-800">${product.name}</h2>
+                    <p class="text-sm text-gray-500 mb-6">${store.name}</p>
+                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Description</h3>
+                    <p class="text-gray-600 mb-6 leading-relaxed">${product.description || 'No description available.'}</p>
+
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Features</h3>
+                    <ul class="space-y-2 text-gray-600 mb-6">${featuresHTML}</ul>
+
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Specifications</h3>
+                    <div class="grid grid-cols-2 gap-3 mb-6">${specsHTML}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Footer Bar (Mobile & Desktop) -->
+        <div class="fixed bottom-0 left-0 right-0 max-w-7xl mx-auto md:left-72 bg-white border-t p-4 shadow-lg-top">
+            <div class="flex items-center justify-between max-w-3xl mx-auto">
+                <div>
+                    <p class="text-sm text-gray-500 line-through">₹${product.original_price_inr || '0'}</p>
+                    <div class="flex items-center font-bold text-gray-800">
+                        <span class="text-2xl text-green-700">₹${product.discounted_price_inr || '0'}</span>
+                        <span class="mx-2 text-gray-400">+</span>
+                        <i data-lucide="leaf" class="w-5 h-5 text-green-500 mr-1"></i>
+                        <span class="text-2xl text-green-700">${product.cost_in_points}</span>
+                    </div>
+                </div>
+                <button onclick="openPurchaseModal('${store.id}', '${product.id}')" 
+                        class="${buttonClass} text-white text-md font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap" 
+                        ${!canAfford ? 'disabled' : ''}>
+                    Redeem Offer
+                </button>
+            </div>
+        </div>
+    `;
+
+    pages.forEach(p => p.classList.remove('active'));
+    productDetailPage.classList.add('active');
+    mainContent.scrollTop = 0;
+    lucide.createIcons();
+};
+
+window.updateEventRSVP = async (eventId) => {
+    logActivity('button_click', { action: 'rsvp_event_attempt', eventId });
+    const hasRSVPd = appState.eventRsvps.some(rsvp => rsvp.event_id == eventId);
+    if (hasRSVPd) return;
+
+    const { data, error } = await supabase
+        .from('event_rsvps')
+        .insert({
+            event_id: eventId,
+            student_id: appState.currentUser.student_id
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("Error creating RSVP:", error.message);
+        return;
+    }
+
+    logActivity('rsvp_event_success', { eventId });
+    appState.eventRsvps.push(data);
+    
+    // Also add to history
+    const event = appState.events.find(e => e.id === eventId);
+    if (event) {
+        await supabase.from('points_history').insert({
+            student_id: appState.currentUser.student_id,
+            points_change: event.points_reward,
+            description: `Attended: ${event.title}`,
+            type: 'event'
+        });
+        appState.currentUser.current_points += event.points_reward;
+        appState.currentUser.lifetime_points += event.points_reward;
+        await fetchHistory();
+    }
+    
+    renderEvents();
+    renderDashboard();
+    renderHeader();
+};
+
+window.openPurchaseModal = (storeId, productId) => {
+    logActivity('button_click', { action: 'open_purchase_modal', productId });
+    const { store, product } = getProduct(storeId, productId);
+    if (!product) return;
+
+    purchaseModal.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">Purchase Reward</h3>
+            <button onclick="closePurchaseModal()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        
+        <div class="flex items-center mb-4">
+            <img src="${product.images ? product.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${product.name}" class="w-24 h-32 object-cover rounded-lg mr-4">
+            <div>
+                <h4 class="text-lg font-bold text-gray-800">${product.name}</h4>
+                <p class="text-sm text-gray-500 mb-2">From ${store.name}</p>
+                <div class="flex items-center font-bold text-gray-800">
+                    <span class="text-lg text-green-700">₹${product.discounted_price_inr || '0'}</span>
+                    <span class="mx-1 text-gray-400">+</span>
+                    <i data-lucide="leaf" class="w-4 h-4 text-green-500 mr-1"></i>
+                    <span class="text-lg text-green-700">${product.cost_in_points}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-100 rounded-lg p-3 mb-4 mt-4">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-gray-600">Your Balance</span>
+                <span class="font-semibold text-gray-800">${appState.currentUser.current_points} EcoPoints</span>
+            </div>
+            <div class="flex justify-between items-center text-red-600">
+                <span class="font-semibold">Cost</span>
+                <span class="font-bold text-lg">-${product.cost_in_points} EcoPoints</span>
+            </div>
+            <hr class="my-2 border-gray-300">
+            <div class="flex justify-between items-center text-green-600">
+                <span class="font-semibold">Remaining</span>
+                <span class="font-bold text-lg">${appState.currentUser.current_points - product.cost_in_points} EcoPoints</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="closePurchaseModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-300">
+                Cancel
+            </button>
+            <button onclick="confirmPurchase('${store.id}', '${product.id}')" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700">
+                Confirm & Purchase
+            </button>
+        </div>
+    `;
+    
+    purchaseModalOverlay.classList.remove('hidden');
+    purchaseModal.classList.remove('translate-y-full');
+    lucide.createIcons();
+};
+
+window.closePurchaseModal = () => {
+    purchaseModalOverlay.classList.add('hidden');
+    purchaseModal.classList.add('translate-y-full');
+    setTimeout(() => {
+        purchaseModal.innerHTML = '';
+    }, 300);
+};
+
+window.confirmPurchase = async (storeId, productId) => {
+    logActivity('button_click', { action: 'confirm_purchase_attempt', productId });
+    const { product } = getProduct(storeId, productId);
+    if (!product) return;
+    
+    if (appState.currentUser.current_points < product.cost_in_points) {
+        logActivity('purchase_attempt_failed', { productId, reason: 'insufficient_points' });
+        purchaseModal.innerHTML = `
+            <div class="text-center p-4">
+                <i data-lucide="x-circle" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Purchase Failed</h3>
+                <p class="text-gray-600 mb-6">You do not have enough points for this reward.</p>
+                <button onclick="closePurchaseModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
+    }
+
+    const { data: newReward, error: rewardError } = await supabase
+        .from('user_rewards')
+        .insert({
+            student_id: appState.currentUser.student_id,
+            product_id: product.id,
+            status: 'active'
+        })
+        .select()
+        .single();
+    
+    if (rewardError) {
+        logActivity('purchase_attempt_failed', { productId, reason: rewardError.message });
+        console.error("Error purchasing reward:", rewardError.message);
+        return;
+    }
+
+    const { error: pointsError } = await supabase
+        .from('points_history')
+        .insert({
+            student_id: appState.currentUser.student_id,
+            points_change: -product.cost_in_points,
+            description: `Purchased: ${product.name}`,
+            type: 'reward-purchase'
+        });
+    
+    if (pointsError) {
+        console.error("Error logging purchase points:", pointsError.message);
+        return;
+    }
+
+    logActivity('purchase_attempt_success', { productId, points: -product.cost_in_points });
+    appState.currentUser.current_points -= product.cost_in_points;
+    appState.userRewards.unshift(newReward);
+
+    purchaseModal.innerHTML = `
+        <div class="text-center p-4">
+            <i data-lucide="check-circle" class="w-16 h-16 text-green-500 mx-auto mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Purchase Successful!</h3>
+            <p class="text-gray-600 mb-6">You can find your new reward in "My Rewards".</p>
+            <button onclick="closePurchaseModalAndShowMyRewards()" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 mb-2">
+                Go to My Rewards
+            </button>
+            <button onclick="closePurchaseModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-300">
+                Done
+            </button>
+        </div>
+    `;
+    lucide.createIcons();
+    
+    renderHeader();
+};
+
+window.closePurchaseModalAndShowMyRewards = () => {
+    closePurchaseModal();
+    showPage('my-rewards', 'My Rewards');
+};
+
+window.openRewardQrModal = (userRewardId) => {
+    logActivity('button_click', { action: 'open_qr_modal', userRewardId });
+    const userReward = appState.userRewards.find(ur => ur.id == userRewardId);
+    const rewardDetails = getRewardDetails(userReward); 
+    if (!rewardDetails) return;
+
+    const qrData = `USER_REWARD_ID::${userReward.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+
+    qrModal.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">${rewardDetails.name}</h3>
+            <button onclick="closeQrModal()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        
+        <div class="flex justify-center mb-4 p-4 bg-white rounded-lg border">
+            <img src="${qrCodeUrl}" alt="QR Code" class="rounded-lg">
+        </div>
+
+        <div class="bg-gray-100 rounded-lg p-4 text-left mb-6">
+            <h4 class="font-bold text-gray-800 mb-2">How to Redeem:</h4>
+            <p class="text-sm text-gray-600">${rewardDetails.instructions}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="closeQrModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-300">
+                Done
+            </button>
+            <button onclick="markRewardAsUsed('${userReward.id}')" class="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600">
+                Mark as Used
+            </button>
+        </div>
+    `;
+
+    qrModalOverlay.classList.remove('hidden');
+    qrModal.classList.remove('translate-y-full');
+    lucide.createIcons();
+};
+
+window.closeQrModal = () => {
+    qrModalOverlay.classList.add('hidden');
+    qrModal.classList.add('translate-y-full');
+    setTimeout(() => {
+        qrModal.innerHTML = '';
+    }, 300);
+};
+
+window.markRewardAsUsed = async (userRewardId) => {
+    logActivity('button_click', { action: 'mark_reward_used_attempt', userRewardId });
+    const userReward = appState.userRewards.find(ur => ur.id == userRewardId);
+    if (!userReward || userReward.status === 'used') return;
+
+    const usedDate = new Date().toISOString();
+    
+    const { error } = await supabase
+        .from('user_rewards')
+        .update({ status: 'used', used_date: usedDate })
+        .eq('id', userRewardId);
+    
+    if (error) {
+        console.error("Error marking reward as used:", error.message);
+        return;
+    }
+
+    logActivity('mark_reward_used_success', { userRewardId });
+    userReward.status = 'used';
+    userReward.used_date = usedDate;
+    
+    renderMyRewardsPage();
+    closeQrModal();
+};
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+    logActivity('button_click', { action: 'change_password_attempt' });
+    
+    changePasswordButton.disabled = true;
+    changePasswordButton.textContent = 'Updating...';
+    passwordMessage.textContent = '';
+    passwordMessage.className = 'text-sm text-center';
+
+    const newPassword = document.getElementById('new-password').value;
+    
+    if (newPassword.length < 6) {
+        passwordMessage.textContent = 'Password must be at least 6 characters.';
+        passwordMessage.classList.add('text-red-600');
+        changePasswordButton.disabled = false;
+        changePasswordButton.textContent = 'Update Password';
+        return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+        logActivity('change_password_failed', { error: error.message });
+        passwordMessage.textContent = `Error: ${error.message}`;
+        passwordMessage.classList.add('text-red-600');
+    } else {
+        logActivity('change_password_success');
+        passwordMessage.textContent = 'Password updated successfully!';
+        passwordMessage.classList.add('text-green-600');
+        changePasswordForm.reset();
+    }
+    
+    changePasswordButton.disabled = false;
+    changePasswordButton.textContent = 'Update Password';
+}
+
+
+// --- App Initialization ---
+
+async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        window.location.href = 'login.html';
+        return false;
+    }
+    return true;
+}
+
+async function loadInitialData() {
+    appLoading.style.display = 'flex';
+
+    await fetchUserProfile();
+    
+    if (!appState.currentUser) {
+        console.error("Could not load user profile. Logging out.");
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+        return;
+    }
+
+    logActivity('app_load_success');
+
+    await Promise.all([
+        fetchLeaderboard(),
+        fetchHistory(),
+        fetchChallenges(),
+        fetchEventsAndRSVPs(),
+        fetchStoresAndProducts(),
+        fetchUserRewards(),
+        fetchLevels()
+    ]);
+    
+    appLoading.style.display = 'none';
+}
+
+// Make functions globally accessible for inline onclick=""
+Object.assign(window, {
+    showPage,
+    toggleSidebar,
+    performCheckIn,
+    completeChallenge,
+    updateEventRSVP,
+    openPurchaseModal,
+    closePurchaseModal,
+    confirmPurchase,
+    closePurchaseModalAndShowMyRewards,
+    openRewardQrModal,
+    closeQrModal,
+    markRewardAsUsed
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    sidebarToggleButton.addEventListener('click', () => toggleSidebar(false));
+    desktopLogoutButton.addEventListener('click', async () => {
+        logActivity('logout');
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+    });
+    mobileLogoutButton.addEventListener('click', async () => {
+        logActivity('logout');
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+    });
+    changePasswordForm.addEventListener('submit', handleChangePassword);
+
+    const isLoggedIn = await checkAuth();
+    if (!isLoggedIn) {
+        return;
+    }
+    
+    await loadInitialData();
+
+    renderHeader();
+    renderDashboard();
+    
+    showPage('dashboard', 'Dashboard'); // Show dashboard first
+    lucide.createIcons(); 
+});
