@@ -1,7 +1,7 @@
 // app.js
 
 // Import the shared Supabase client
-import { supabase }s from './supabase-client.js';
+import { supabase } from './supabase-client.js';
 
 // --- Global App State ---
 let appState = {
