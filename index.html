@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Green Campus Challenge</title>
     
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/d00b4v0n/Eco-Birla-2-modified.png">
 
     <link rel="stylesheet" href="style.css">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Tailwind Config for Dark Mode -->
     <script>
         tailwind.config = {
             darkMode: 'class', // This enables class-based dark mode
@@ -27,32 +24,25 @@
         }
     </script>
     
-    <!-- Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-inter">
 
-    <!-- App Loader -->
     <div id="app-loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-gray-900 transition-opacity duration-300">
         <div class="app-loader-logo">
-            <!-- Logo from favicon URL -->
             <img src="https://i.ibb.co/d00b4v0n/Eco-Birla-2-modified.png" alt="EcoBirla Logo" class="w-20 h-20">
         </div>
         <p class="text-lg font-semibold text-gray-600 dark:text-gray-300 mt-4">Loading EcoBirla...</p>
     </div>
 
-    <!-- Sidebar Overlay (Mobile) -->
     <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 opacity-0 hidden md:hidden"></div>
     
-    <!-- Main App Layout -->
     <div class="flex h-screen overflow-hidden">
     
-        <!-- Sidebar -->
         <div id="sidebar" class="fixed md:static top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col flex-shrink-0">
             
-            <!-- User Profile Section -->
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                 <img id="user-avatar-sidebar" src="https://placehold.co/80x80/gray/white?text=User" class="w-16 h-16 rounded-full mb-3 border-2 border-green-500" alt="User Avatar">
                 <h2 id="user-name-sidebar" class="text-xl font-bold text-gray-800 dark:text-gray-100">Loading...</h2>
@@ -60,7 +50,6 @@
                 <p class="text-sm text-green-600 dark:text-green-400 font-semibold"><span id="user-points-sidebar">0</span> EcoPoints</p>
             </div>
 
-            <!-- Navigation -->
             <nav class="flex-grow p-4 space-y-2 overflow-y-auto">
                 <button onclick="showPage('dashboard')" class="sidebar-nav-item w-full flex items-center p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Dashboard
@@ -77,7 +66,6 @@
                 
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700"></div>
 
-                <!-- Main App Pages -->
                 <button onclick="showPage('leaderboard')" class="sidebar-nav-item w-full flex items-center p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>Leaders
                 </button>
@@ -93,9 +81,8 @@
 
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700"></div>
 
-                <!-- New Download App Page Link -->
                 <button onclick="showPage('download-app')" class="sidebar-nav-item w-full flex items-center p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i data-lucide="download" class="w-5 h-5 mr-3"></i>Download App
+                    <i data-lucide="smartphone-download" class="w-5 h-5 mr-3"></i>Download App
                 </button>
                 <button onclick="showPage('about')" class="sidebar-nav-item w-full flex items-center p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i data-lucide="info" class="w-5 h-5 mr-3"></i>About Us
@@ -107,7 +94,6 @@
                     <i data-lucide="key-round" class="w-5 h-5 mr-3"></i>Change Password
                 </button>
                 
-                <!-- Dark Mode Toggle -->
                 <div class="pt-2 border-t border-gray-200 dark:border-gray-700"></div>
                 <div class="flex items-center justify-between p-3 rounded-lg text-gray-700 dark:text-gray-300">
                     <div class="flex items-center">
@@ -122,7 +108,6 @@
 
             </nav>
 
-            <!-- Logout Button -->
             <div class="p-4">
                 <button id="logout-button" class="w-full bg-red-100 text-red-700 font-bold py-3 px-4 rounded-lg hover:bg-red-200 dark:bg-red-800 dark:text-red-100 dark:hover:bg-red-700 transition-colors flex items-center justify-center">
                     <i data-lucide="log-out" class="w-5 h-5 mr-2"></i>
@@ -135,10 +120,8 @@
             </div>
         </div>
 
-        <!-- Main Content Area -->
         <div class="flex-grow flex flex-col overflow-hidden">
             
-            <!-- Mobile Header (Hidden on Desktop) -->
             <header class="md:hidden bg-white dark:bg-gray-950 sticky top-0 z-10 p-4 border-b border-gray-200 dark:border-gray-800">
                 <div class="flex justify-between items-center">
                     <div class="w-1/3"> 
@@ -160,10 +143,7 @@
                 </div>
             </header>
 
-            <!-- Scrollable Page Content -->
             <main class="main-content flex-grow overflow-y-auto overflow-x-hidden bg-gray-100 dark:bg-gray-900"> 
-
-                <!-- All pages from original app go here, with adjusted padding for desktop -->
 
                 <div id="dashboard" class="page p-6 md:p-8">
                     <div class="mb-8">
@@ -172,12 +152,10 @@
                     </div>
                     
                     <div id="dashboard-event-card" class="mb-6">
-                        <!-- Dynamic Event Card -->
-                    </div>
+                        </div>
 
                     <div id="daily-check-in-card" class="mb-6">
-                        <!-- Dynamic Check-in Card -->
-                    </div>
+                        </div>
 
                     <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Your Impact</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -198,13 +176,11 @@
                         </div>
                     </div>
                     
-                    <!-- Desktop layout for Challenges & Leaderboard -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Daily Challenges</h3>
                             <div id="challenges-dashboard-list" class="space-y-3 mb-4">
-                                <!-- Dynamic Challenges -->
-                            </div>
+                                </div>
                             <button onclick="showPage('challenges')" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                 View All Challenges
                             </button>
@@ -212,8 +188,7 @@
                         <div>
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Top Champions</h3>
                             <div id="leaderboard-dashboard-list" class="space-y-3 mb-4">
-                                <!-- Dynamic Leaderboard -->
-                            </div>
+                                </div>
                             <button onclick="showPage('leaderboard')" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                 View All Rankings
                             </button>
@@ -235,12 +210,10 @@
 
                 <div id="profile" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Your Profile</h2>
-                    <div class="space-y-6 max-w-4xl mx-auto"> <!-- Centered and max-width for desktop -->
-                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+                    <div class="space-y-6 max-w-4xl mx-auto"> <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
                             <div class="bg-green-500 h-24"></div>
                             <div class="p-5 -mt-16 flex flex-col items-center">
                                 
-                                <!-- Profile Picture Upload -->
                                 <div class="relative group">
                                     <img id="profile-avatar" src="https://placehold.co/80x80/gray/white?text=User" class="w-28 h-28 rounded-full border-4 border-white dark:border-gray-800 shadow-lg">
                                     <label for="profile-pic-upload" class="absolute inset-0 w-28 h-28 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -248,7 +221,6 @@
                                     </label>
                                     <input type="file" id="profile-pic-upload" accept="image/*" class="hidden">
                                     
-                                    <!-- Uploading Spinner -->
                                     <div id="profile-pic-loader" class="absolute inset-0 w-28 h-28 rounded-full bg-black/70 flex items-center justify-center hidden">
                                         <div class="w-8 h-8 border-4 border-t-green-500 border-gray-200 rounded-full animate-spin"></div>
                                     </div>
@@ -298,8 +270,7 @@
                         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                             <h4 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Membership</h4>
                             <div id="profile-membership" class="flex items-center">
-                                <!-- Dynamic Membership -->
-                            </div>
+                                </div>
                         </div>
 
                     </div>
@@ -308,15 +279,13 @@
                 <div id="leaderboard" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Top Champions</h2>
                     <div id="leaderboard-page-list" class="space-y-3 max-w-4xl mx-auto">
-                        <!-- Dynamic Leaderboard Page -->
-                    </div>
+                        </div>
                 </div>
                 
                 <div id="challenges" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Daily Challenges</h2>
                     <div id="challenges-page-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
-                        <!-- Dynamic Challenges Page -->
-                    </div>
+                        </div>
                 </div>
 
                 <div id="ecopoints" class="page p-6 md:p-8">
@@ -421,8 +390,7 @@
                                         <button onclick="showPage('history')" class="text-sm font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">View All</button>
                                     </div>
                                     <div id="ecopoints-recent-activity" class="space-y-3">
-                                        <!-- Dynamic Recent Activity -->
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                         </div>
@@ -432,40 +400,33 @@
                 <div id="events" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Upcoming Events</h2>
                     <div id="event-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
-                        <!-- Dynamic Events -->
-                    </div>
+                        </div>
                 </div>
 
                 <div id="rewards" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Eco-Store Rewards</h2>
                     <div id="store-list-preview" class="space-y-6 max-w-7xl mx-auto">
-                        <!-- Dynamic Store List -->
-                    </div>
+                        </div>
                 </div>
                 
                 <div id="store-detail-page" class="page dark:bg-gray-900">
-                    <!-- Dynamic Store Detail Page -->
-                </div>
+                    </div>
 
                 <div id="product-detail-page" class="page dark:bg-gray-900">
-                    <!-- Dynamic Product Detail Page -->
-                </div>
+                    </div>
                 
                 <div id="my-rewards" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">My Rewards</h2>
                     <div id="all-rewards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
-                        <!-- Dynamic My Rewards -->
-                    </div>
+                        </div>
                 </div>
 
                 <div id="history" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Activity History</h2>
                     <div id="history-list" class="space-y-3 max-w-4xl mx-auto">
-                        <!-- Dynamic History -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- New Download App Page -->
                 <div id="download-app" class="page p-6 md:p-8">
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Download Our Mobile App</h2>
                     <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-md max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-8">
@@ -526,8 +487,7 @@
                             </div>
                             
                             <div id="password-message" class="text-sm text-center">
-                                <!-- Password message -->
-                            </div>
+                                </div>
 
                             <div>
                                 <button type="submit" id="change-password-button"
@@ -541,7 +501,6 @@
 
             </main>
 
-            <!-- Mobile Bottom Nav (Hidden on Desktop) -->
             <nav class="md:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
                 <div class="flex justify-around">
                     <button onclick="showPage('dashboard')" class="nav-item active flex-1 text-center py-3 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400">
@@ -564,18 +523,16 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="purchase-modal-overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="closePurchaseModal()"></div>
-    <div id="purchase-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform translate-y-full transition-transform duration-300 ease-in-out">
-        <!-- Dynamic Purchase Modal -->
-    </div>
+    
+    <div id="purchase-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform transition-transform duration-300 ease-in-out hidden">
+        </div>
 
     <div id="qr-modal-overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="closeQrModal()"></div>
-    <div id="qr-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform translate-y-full transition-transform duration-300 ease-in-out">
-        <!-- Dynamic QR Modal -->
-    </div>
+    
+    <div id="qr-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform transition-transform duration-300 ease-in-out hidden">
+        </div>
 
-    <!-- Main App Script -->
     <script src="app.js" type="module" defer></script>
 </body>
 </html>
