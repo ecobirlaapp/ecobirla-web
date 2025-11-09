@@ -782,7 +782,7 @@ const renderRewards = () => {
         const storeProducts = appState.products.filter(p => p.store_id === store.id);
         
         // Render more products for desktop preview
-        storeProducts.slice(0, 5).forEach(product => {
+        storeProducts.slice(0, 8).forEach(product => {
             // Need to wrap product card for horizontal scroll
             productsHTML += `<div class="w-36 flex-shrink-0">${renderProductCard(product, store.id, 'preview')}</div>`;
         });
