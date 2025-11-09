@@ -7,7 +7,23 @@
     
     <link rel="icon" type="image/png" href="https://i.ibb.co/d00b4v0n/Eco-Birla-2-modified.png">
 
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+   <!-- OneSignal Web Push -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "9d8bcdb5-cf70-4d19-84b7-037c5913ae42", // ✅ Your real App ID
+      notifyButton: {
+        enable: true, // shows the floating bell widget
+      },
+      serviceWorkerPath: "OneSignalSDKWorker.js",
+      serviceWorkerUpdaterPath: "OneSignalSDKUpdaterWorker.js",
+      serviceWorkerParam: { scope: "/" },
+    });
+  });
+</script>
+
     
     <link rel="stylesheet" href="style.css">
     
