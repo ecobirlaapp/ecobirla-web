@@ -1,7 +1,7 @@
 // app.js
 
 // Import the shared Supabase client
-import { supabase } from './supabase-client.js';
+import { supabase }s from './supabase-client.js';
 
 // --- Global App State ---
 let appState = {
@@ -782,7 +782,7 @@ const renderRewards = () => {
         const storeProducts = appState.products.filter(p => p.store_id === store.id);
         
         // Render more products for desktop preview
-        storeProducts.slice(0, 8).forEach(product => {
+        storeProducts.slice(0, 5).forEach(product => {
             // Need to wrap product card for horizontal scroll
             productsHTML += `<div class="w-36 flex-shrink-0">${renderProductCard(product, store.id, 'preview')}</div>`;
         });
@@ -1570,6 +1570,18 @@ async function loadInitialData() {
         window.location.href = 'login.html';
         return;
     }
+
+    // --- START: ONESIGNAL USER TAGGING ---
+    // This pushes the command to a queue. It will run after OneSignal initializes.
+    // This is for sending notifications to specific users.
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(function(OneSignal) {
+        console.log("Tagging user in OneSignal:", appState.currentUser.student_id);
+        OneSignal.sendTag("student_id", appState.currentUser.student_id);
+        OneSignal.sendTag("email", appState.currentUser.email);
+        OneSignal.sendTag("name", appState.currentUser.name);
+    });
+    // --- END: ONESIGNAL USER TAGGING ---
 
     logActivity('app_load_success');
 
