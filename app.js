@@ -106,15 +106,6 @@ const getTodayDateString = () => {
     return new Date().toISOString().split('T')[0];
 };
 
-// Hide loader once the full page and data have loaded
-window.addEventListener("load", () => {
-  const appLoader = document.getElementById("app-loading");
-  if (appLoader) {
-    appLoader.classList.add("loaded");
-  }
-});
-
-
 /**
  * Activity Logging Function
  * Logs user interactions to the 'activity_log' table without waiting.
@@ -1626,4 +1617,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     showPage('dashboard');
     lucide.createIcons(); 
+});
+// ✅ Automatically hide the loading screen when everything is ready
+window.addEventListener("load", () => {
+  const appLoader = document.getElementById("app-loading");
+  if (appLoader) {
+    // Give a tiny delay to allow page render, then fade out
+    setTimeout(() => {
+      appLoader.classList.add("loaded");
+    }, 300);
+  }
 });
