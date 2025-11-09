@@ -494,8 +494,9 @@ const renderChallengeCard = (challenge) => {
                     </button>`;
     }
 
+    // Card container changed to allow grid layout to work properly
     return `
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md flex flex-col">
             <div class="flex items-start">
                 <div class="p-3 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg mr-4">
                     <i data-lucide="${challenge.icon || 'award'}" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
@@ -504,8 +505,10 @@ const renderChallengeCard = (challenge) => {
                     <h3 class="font-bold text-gray-800 dark:text-gray-100 text-lg">${challenge.title}</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${challenge.description}</p>
                     <p class="text-sm font-bold text-green-600 dark:text-green-400 mb-3">+${challenge.points_reward} EcoPoints</p>
-                    ${buttonHTML}
                 </div>
+            </div>
+            <div class="mt-auto">
+                 ${buttonHTML}
             </div>
         </div>
     `;
@@ -516,7 +519,7 @@ const renderChallengesPage = () => {
     const challenges = appState.dailyChallenges;
     
     if(!challenges || challenges.length === 0) {
-        challengesPageList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">No challenges available today. Check back tomorrow!</p>`;
+        challengesPageList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No challenges available today. Check back tomorrow!</p>`;
         return;
     }
 
@@ -712,7 +715,7 @@ const renderEvents = () => {
     eventList.innerHTML = '';
     const events = appState.events;
     if (!events || events.length === 0) {
-        eventList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">No upcoming events scheduled.</p>`;
+        eventList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No upcoming events scheduled.</p>`;
         return;
     }
 
@@ -725,7 +728,7 @@ const renderEvents = () => {
         
         // MODIFICATION: Removed points text
         eventList.innerHTML += `
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md flex flex-col">
                 <div class="flex items-start">
                     <div class="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-lg mr-4">
                         <i data-lucide="calendar" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
@@ -734,8 +737,10 @@ const renderEvents = () => {
                         <p class="text-xs font-semibold text-purple-600 dark:text-purple-400">${new Date(e.event_date).toLocaleString('en-GB')}</p>
                         <h3 class="font-bold text-gray-800 dark:text-gray-100 text-lg">${e.title}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${e.description}</p>
-                        ${rsvpButton}
                     </div>
+                </div>
+                <div class="mt-auto">
+                    ${rsvpButton}
                 </div>
             </div>
         `;
@@ -744,10 +749,11 @@ const renderEvents = () => {
 };
 
 const renderProductCard = (product, storeId, type = 'grid') => {
-    const cardWidth = type === 'preview' ? 'w-36' : 'w-full';
+    // Card width is now handled by the grid layout in the HTML
+    // const cardWidth = type === 'preview' ? 'w-36' : 'w-full';
     
     return `
-        <div class="${cardWidth} flex-shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col shadow-md cursor-pointer transition-shadow hover:shadow-lg" 
+        <div class="w-full flex-shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col shadow-md cursor-pointer transition-shadow hover:shadow-lg" 
              onclick="showProductDetailPage('${storeId}', '${product.id}')">
             
             <img src="${product.images ? product.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${product.name}" class="w-full h-48 object-cover">
@@ -775,8 +781,10 @@ const renderRewards = () => {
         let productsHTML = '';
         const storeProducts = appState.products.filter(p => p.store_id === store.id);
         
-        storeProducts.slice(0, 3).forEach(product => {
-            productsHTML += renderProductCard(product, store.id, 'preview');
+        // Render more products for desktop preview
+        storeProducts.slice(0, 5).forEach(product => {
+            // Need to wrap product card for horizontal scroll
+            productsHTML += `<div class="w-36 flex-shrink-0">${renderProductCard(product, store.id, 'preview')}</div>`;
         });
 
         storeListPreview.innerHTML += `
@@ -806,7 +814,7 @@ const renderMyRewardsPage = () => {
     const allRewards = appState.userRewards; 
 
     if (!allRewards || allRewards.length === 0) {
-        allRewardsList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 p-4">You have no rewards. Visit the Eco-Store to get some!</p>`;
+        allRewardsList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 p-4 col-span-full">You have no rewards. Visit the Eco-Store to get some!</p>`;
     } else {
         allRewards.forEach(userReward => {
             const rewardDetails = getRewardDetails(userReward);
@@ -815,7 +823,7 @@ const renderMyRewardsPage = () => {
             if (rewardDetails.status === 'active') {
                 allRewardsList.innerHTML += `
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden flex">
-                        <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-auto object-cover">
+                        <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-auto object-cover flex-shrink-0">
                         <div class="p-4 flex-grow flex flex-col">
                             <h3 class="font-bold text-gray-800 dark:text-gray-100">${rewardDetails.name}</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">${rewardDetails.storeName}</p>
@@ -829,7 +837,7 @@ const renderMyRewardsPage = () => {
             } else {
                 allRewardsList.innerHTML += `
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden flex opacity-60">
-                        <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-auto object-cover">
+                        <img src="${rewardDetails.images ? rewardDetails.images[0] : 'https://placehold.co/300x400/gray/white?text=No+Img'}" alt="${rewardDetails.name}" class="w-28 h-auto object-cover flex-shrink-0">
                         <div class="p-4 flex-grow">
                             <h3 class="font-bold text-gray-800 dark:text-gray-100">${rewardDetails.name}</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">${rewardDetails.storeName}</p>
@@ -962,6 +970,7 @@ window.showPage = (pageId) => {
         item.classList.toggle('active', item.getAttribute('onclick')?.includes(`'${pageId}'`));
     });
     
+    // Only update bottom nav if it exists (it's hidden on desktop)
     navItems.forEach(item => {
         item.classList.toggle('active', item.getAttribute('onclick')?.includes(`'${pageId}'`));
     });
@@ -984,8 +993,12 @@ window.showPage = (pageId) => {
         passwordMessage.className = 'text-sm text-center';
         changePasswordForm.reset();
     }
+    // No render needed for download-app, about, or help pages
 
-    toggleSidebar(true); 
+    // MODIFICATION: Only close sidebar on mobile (when overlay is visible)
+    if (!sidebarOverlay.classList.contains('hidden')) {
+        toggleSidebar(true);
+    }
 };
 
 window.showStoreDetailPage = (storeId) => {
@@ -1008,9 +1021,9 @@ window.showStoreDetailPage = (storeId) => {
             <img src="${store.logo_url || 'https://placehold.co/40x40/gray/white?text=Store'}" class="w-10 h-10 rounded-full mr-3 border dark:border-gray-700">
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">${store.name}</h2>
         </div>
-        <div class="p-6">
+        <div class="p-6 md:p-8">
             <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">All Products</h3>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 ${productsHTML}
             </div>
         </div>
@@ -1069,54 +1082,68 @@ window.showProductDetailPage = (storeId, productId) => {
         });
     }
 
+    // Desktop-friendly layout for product details
     productDetailPage.innerHTML = `
-        <div class="pb-24">
-            <div class="relative">
-                <img id="product-main-image" src="${mainImage}" alt="${product.name}" class="w-full h-[32rem] object-cover bg-gray-200 dark:bg-gray-700">
-                <button onclick="showStoreDetailPage('${store.id}')" class="absolute top-4 left-4 p-2 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-md text-gray-700 dark:text-gray-200">
+        <div class="pb-24"> <!-- Padding for mobile sticky footer -->
+            
+            <!-- Sticky back button -->
+            <div class="sticky top-0 z-10 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm md:bg-transparent md:dark:bg-transparent md:backdrop-blur-none md:absolute">
+                 <button onclick="showStoreDetailPage('${store.id}')" class="p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-700 dark:text-gray-200">
                     <i data-lucide="arrow-left" class="w-6 h-6"></i>
                 </button>
             </div>
             
-            ${thumbnailsHTML ? `
-            <div class="p-4 bg-white dark:bg-gray-950 border-b dark:border-gray-800">
-                <div class="flex space-x-3 overflow-x-auto horizontal-scroll">
-                    ${thumbnailsHTML}
+            <div class="max-w-6xl mx-auto p-0 md:p-8 md:pt-16">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Image Gallery -->
+                    <div>
+                        <img id="product-main-image" src="${mainImage}" alt="${product.name}" class="w-full h-auto md:h-[32rem] object-cover rounded-lg bg-gray-200 dark:bg-gray-700">
+                        ${thumbnailsHTML ? `
+                        <div class="p-4 md:p-0 md:pt-4">
+                            <div class="flex space-x-3 overflow-x-auto horizontal-scroll">
+                                ${thumbnailsHTML}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="p-6 md:p-0">
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">${product.name}</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">${store.name}</p>
+                        
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Description</h3>
+                        <p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">${product.description || 'No description available.'}</p>
+
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Features</h3>
+                        <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-6">${featuresHTML}</ul>
+
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Specifications</h3>
+                        <div class="grid grid-cols-2 gap-3 mb-6">${specsHTML}</div>
+                    </div>
                 </div>
-            </div>
-            ` : ''}
-            
-            <div class="p-6 bg-white dark:bg-gray-900">
-                <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">${product.name}</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">${store.name}</p>
-                
-                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Description</h3>
-                <p class="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">${product.description || 'No description available.'}</p>
-
-                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Features</h3>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-6">${featuresHTML}</ul>
-
-                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Specifications</h3>
-                <div class="grid grid-cols-2 gap-3 mb-6">${specsHTML}</div>
             </div>
         </div>
 
-        <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-4 shadow-lg-top">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 line-through">₹${product.original_price_inr || '0'}</p>
-                    <div class="flex items-center font-bold text-gray-800 dark:text-gray-100">
-                        <span class="text-2xl text-green-700 dark:text-green-400">₹${product.discounted_price_inr || '0'}</span>
-                        <span class="mx-2 text-gray-400 dark:text-gray-500">+</span>
-                        <i data-lucide="leaf" class="w-5 h-5 text-green-500 mr-1"></i>
-                        <span class="text-2xl text-green-700 dark:text-green-400">${product.cost_in_points}</span>
+        <!-- Sticky Footer (Mobile) / Static Footer (Desktop) -->
+        <div class="fixed bottom-0 left-0 right-0 md:static md:w-1/2 md:ml-auto md:pr-8 md:pb-8 md:pl-8 z-20">
+            <div class="bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-4 shadow-lg-top md:rounded-lg md:shadow-xl md:border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 line-through">₹${product.original_price_inr || '0'}</p>
+                        <div class="flex items-center font-bold text-gray-800 dark:text-gray-100">
+                            <span class="text-2xl text-green-700 dark:text-green-400">₹${product.discounted_price_inr || '0'}</span>
+                            <span class="mx-2 text-gray-400 dark:text-gray-500">+</span>
+                            <i data-lucide="leaf" class="w-5 h-5 text-green-500 mr-1"></i>
+                            <span class="text-2xl text-green-700 dark:text-green-400">${product.cost_in_points}</span>
+                        </div>
                     </div>
+                    <button onclick="openPurchaseModal('${store.id}', '${product.id}')" 
+                            class="${buttonClass} text-white text-md font-bold py-3 px-6 rounded-lg transition-colors" 
+                            ${!canAfford ? 'disabled' : ''}>
+                        Redeem Offer
+                    </button>
                 </div>
-                <button onclick="openPurchaseModal('${store.id}', '${product.id}')" 
-                        class="${buttonClass} text-white text-md font-bold py-3 px-6 rounded-lg transition-colors" 
-                        ${!canAfford ? 'disabled' : ''}>
-                    Redeem Offer
-                </button>
             </div>
         </div>
     `;
@@ -1559,7 +1586,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeTheme();
     
     // Add event listeners that are always present
-    document.getElementById('sidebar-toggle-btn').addEventListener('click', () => toggleSidebar(false));
+    // The sidebar toggle button only exists in the mobile header
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+    if(sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', () => toggleSidebar(false));
+    }
+    
     logoutButton.addEventListener('click', async () => {
         logActivity('logout');
         await supabase.auth.signOut();
