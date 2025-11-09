@@ -106,6 +106,15 @@ const getTodayDateString = () => {
     return new Date().toISOString().split('T')[0];
 };
 
+// Hide loader once the full page and data have loaded
+window.addEventListener("load", () => {
+  const appLoader = document.getElementById("app-loading");
+  if (appLoader) {
+    appLoader.classList.add("loaded");
+  }
+});
+
+
 /**
  * Activity Logging Function
  * Logs user interactions to the 'activity_log' table without waiting.
