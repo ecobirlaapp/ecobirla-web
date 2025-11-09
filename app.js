@@ -960,12 +960,13 @@ window.showPage = (pageId) => {
     
     // --- START: MODAL FIX ---
     // Force-close any open modals on page navigation
+    // We now use 'hidden' which sets display: none
     purchaseModalOverlay.classList.add('hidden');
-    purchaseModal.classList.add('translate-y-full');
+    purchaseModal.classList.add('hidden'); // <-- UPDATED
     purchaseModal.innerHTML = ''; // Clear content immediately
     
     qrModalOverlay.classList.add('hidden');
-    qrModal.classList.add('translate-y-full');
+    qrModal.classList.add('hidden'); // <-- UPDATED
     qrModal.innerHTML = ''; // Clear content immediately
     // --- END: MODAL FIX ---
 
@@ -1251,13 +1252,13 @@ window.openPurchaseModal = (storeId, productId) => {
     `;
     
     purchaseModalOverlay.classList.remove('hidden');
-    purchaseModal.classList.remove('translate-y-full');
+    purchaseModal.classList.remove('hidden'); // <-- UPDATED
     lucide.createIcons();
 };
 
 window.closePurchaseModal = () => {
     purchaseModalOverlay.classList.add('hidden');
-    purchaseModal.classList.add('translate-y-full');
+    purchaseModal.classList.add('hidden'); // <-- UPDATED
     setTimeout(() => {
         purchaseModal.innerHTML = '';
     }, 300);
@@ -1379,13 +1380,13 @@ window.openRewardQrModal = (userRewardId) => {
     `;
 
     qrModalOverlay.classList.remove('hidden');
-    qrModal.classList.remove('translate-y-full');
+    qrModal.classList.remove('hidden'); // <-- UPDATED
     lucide.createIcons();
 };
 
 window.closeQrModal = () => {
     qrModalOverlay.classList.add('hidden');
-    qrModal.classList.add('translate-y-full');
+    qrModal.classList.add('hidden'); // <-- UPDATED
     setTimeout(() => {
         qrModal.innerHTML = '';
     }, 300);
