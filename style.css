@@ -1,33 +1,36 @@
 html, body {
     height: 100%;
-    overflow: hidden; 
+    /* overflow: hidden; -- Removed for desktop layout */
 }
 body {
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
 }
-.app-container {
-    max-width: 420px;
-    margin: auto;
-    height: 100%; 
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow-x: hidden;
-}
 
-header, nav {
-    flex-shrink: 0; 
-}
+/* .app-container { ... } 
+-- Removed -- This is no longer needed as the layout is handled 
+   by Tailwind classes on the <body> and main containers.
+*/
+
+/* header, nav { ... } 
+-- Removed -- Handled by flex properties in Tailwind.
+*/
+
 .main-content { 
+    /* This selector is still used by app.js for scrollTop */
     flex-grow: 1; 
     overflow-y: auto; 
     overflow-x: hidden;
 }
 
 /* Page Transitions */
-.page { display: none; animation: fadeIn 0.3s ease-in-out; }
-.page.active { display: block; }
+.page { 
+    display: none; 
+    animation: fadeIn 0.3s ease-in-out; 
+}
+.page.active { 
+    display: block; 
+}
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
