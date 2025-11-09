@@ -1,7 +1,7 @@
 // app.js
 
 // Import the shared Supabase client
-import { supabase } from './supabase-client.js'; // <-- Fixed the typo 'supabase s'
+import { supabase } from './supabase-client.js';
 
 // --- Global App State ---
 let appState = {
@@ -1571,22 +1571,27 @@ async function loadInitialData() {
         return;
     }
 
-    // --- START: ONESIGNAL USER TAGGING (UPDATED) ---
+    // --- START: ONESIGNAL INIT & USER TAGGING (NEW) ---
+    // This is the new, safer way to initialize and tag.
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(function(OneSignal) {
-        console.log("Tagging user in OneSignal:", appState.currentUser.student_id);
-        // Use sendTags (plural) for multiple tags - this is the modern v16 syntax
-        OneSignal.sendTags({
-            student_id: appState.currentUser.student_id,
-            email: appState.currentUser.email,
-            name: appState.currentUser.name
+        OneSignal.init({
+            appId: "9d0bcdbf-c7f8-4d19-8407-03f1c5913e42", // Your App ID
         }).then(() => {
-            console.log("OneSignal tags sent.");
-        }).catch((error) => {
-            console.error("Error sending OneSignal tags:", error);
+            // This runs *after* init is successful
+            console.log("OneSignal Init successful. Tagging user.");
+            OneSignal.User.addTags({
+                student_id: appState.currentUser.student_id,
+                email: appState.currentUser.email,
+                name: appState.currentUser.name
+            }).then(() => {
+                console.log("OneSignal tags sent.");
+            }).catch((error) => {
+                console.error("Error sending OneSignal tags:", error);
+            });
         });
     });
-    // --- END: ONESIGNAL USER TAGGING (UPDATED) ---
+    // --- END: ONESIGNAL INIT & USER TAGGING (NEW) ---
 
     logActivity('app_load_success');
 
