@@ -75,14 +75,17 @@ body {
 
 /* Professional Loader */
 #app-loading {
-    opacity: 1;
-    visibility: visible;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
 }
+
 #app-loading.loaded {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
+
 
 @keyframes pulse-logo {
     0%, 100% {
