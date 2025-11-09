@@ -7,6 +7,15 @@
     
     <link rel="icon" type="image/png" href="https://i.ibb.co/d00b4v0n/Eco-Birla-2-modified.png">
 
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.init({
+          appId: "9d0bcdbf-c7f8-4d19-8407-03f1c5913e42",
+        });
+      });
+    </script>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -524,12 +533,10 @@
     </div>
 
     <div id="purchase-modal-overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="closePurchaseModal()"></div>
-    
     <div id="purchase-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform transition-transform duration-300 ease-in-out hidden">
         </div>
 
     <div id="qr-modal-overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="closeQrModal()"></div>
-    
     <div id="qr-modal" class="fixed bottom-0 left-0 right-0 sm:left-1/2 sm:w-full sm:max-w-md sm:bottom-auto sm:top-1/2 sm:transform sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-xl shadow-lg z-50 p-6 transform transition-transform duration-300 ease-in-out hidden">
         </div>
 
