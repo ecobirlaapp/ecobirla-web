@@ -1,7 +1,7 @@
 // app.js
 
 // Import the shared Supabase client
-import { supabase } from './supabase-client.js';
+import { supabase } from './supabase-client.js'; // <-- Fixed the typo 'supabase s'
 
 // --- Global App State ---
 let appState = {
@@ -1571,17 +1571,22 @@ async function loadInitialData() {
         return;
     }
 
-    // --- START: ONESIGNAL USER TAGGING ---
-    // This pushes the command to a queue. It will run after OneSignal initializes.
-    // This is for sending notifications to specific users.
+    // --- START: ONESIGNAL USER TAGGING (UPDATED) ---
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(function(OneSignal) {
         console.log("Tagging user in OneSignal:", appState.currentUser.student_id);
-        OneSignal.sendTag("student_id", appState.currentUser.student_id);
-        OneSignal.sendTag("email", appState.currentUser.email);
-        OneSignal.sendTag("name", appState.currentUser.name);
+        // Use sendTags (plural) for multiple tags - this is the modern v16 syntax
+        OneSignal.sendTags({
+            student_id: appState.currentUser.student_id,
+            email: appState.currentUser.email,
+            name: appState.currentUser.name
+        }).then(() => {
+            console.log("OneSignal tags sent.");
+        }).catch((error) => {
+            console.error("Error sending OneSignal tags:", error);
+        });
     });
-    // --- END: ONESIGNAL USER TAGGING ---
+    // --- END: ONESIGNAL USER TAGGING (UPDATED) ---
 
     logActivity('app_load_success');
 
