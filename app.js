@@ -957,6 +957,18 @@ window.completeChallenge = async (challengeId) => {
 };
 
 window.showPage = (pageId) => {
+    
+    // --- START: MODAL FIX ---
+    // Force-close any open modals on page navigation
+    purchaseModalOverlay.classList.add('hidden');
+    purchaseModal.classList.add('translate-y-full');
+    purchaseModal.innerHTML = ''; // Clear content immediately
+    
+    qrModalOverlay.classList.add('hidden');
+    qrModal.classList.add('translate-y-full');
+    qrModal.innerHTML = ''; // Clear content immediately
+    // --- END: MODAL FIX ---
+
     pages.forEach(p => p.classList.remove('active'));
     storeDetailPage.innerHTML = '';
     productDetailPage.innerHTML = '';
@@ -1084,10 +1096,7 @@ window.showProductDetailPage = (storeId, productId) => {
 
     // Desktop-friendly layout for product details
     productDetailPage.innerHTML = `
-        <div class="pb-24"> <!-- Padding for mobile sticky footer -->
-            
-            <!-- Sticky back button -->
-            <div class="sticky top-0 z-10 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm md:bg-transparent md:dark:bg-transparent md:backdrop-blur-none md:absolute">
+        <div class="pb-24"> <div class="sticky top-0 z-10 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm md:bg-transparent md:dark:bg-transparent md:backdrop-blur-none md:absolute">
                  <button onclick="showStoreDetailPage('${store.id}')" class="p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-700 dark:text-gray-200">
                     <i data-lucide="arrow-left" class="w-6 h-6"></i>
                 </button>
@@ -1095,7 +1104,6 @@ window.showProductDetailPage = (storeId, productId) => {
             
             <div class="max-w-6xl mx-auto p-0 md:p-8 md:pt-16">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Image Gallery -->
                     <div>
                         <img id="product-main-image" src="${mainImage}" alt="${product.name}" class="w-full h-auto md:h-[32rem] object-cover rounded-lg bg-gray-200 dark:bg-gray-700">
                         ${thumbnailsHTML ? `
@@ -1107,7 +1115,6 @@ window.showProductDetailPage = (storeId, productId) => {
                         ` : ''}
                     </div>
 
-                    <!-- Product Info -->
                     <div class="p-6 md:p-0">
                         <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">${product.name}</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">${store.name}</p>
@@ -1125,7 +1132,6 @@ window.showProductDetailPage = (storeId, productId) => {
             </div>
         </div>
 
-        <!-- Sticky Footer (Mobile) / Static Footer (Desktop) -->
         <div class="fixed bottom-0 left-0 right-0 md:static md:w-1/2 md:ml-auto md:pr-8 md:pb-8 md:pl-8 z-20">
             <div class="bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-4 shadow-lg-top md:rounded-lg md:shadow-xl md:border">
                 <div class="flex items-center justify-between">
@@ -1617,14 +1623,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     showPage('dashboard');
     lucide.createIcons(); 
-});
-// ✅ Automatically hide the loading screen when everything is ready
-window.addEventListener("load", () => {
-  const appLoader = document.getElementById("app-loading");
-  if (appLoader) {
-    // Give a tiny delay to allow page render, then fade out
-    setTimeout(() => {
-      appLoader.classList.add("loaded");
-    }, 300);
-  }
 });
